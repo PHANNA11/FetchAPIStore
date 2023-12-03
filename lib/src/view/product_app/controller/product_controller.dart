@@ -1,28 +1,45 @@
 import 'dart:developer';
 
 import 'package:fetch_api/src/view/product_app/model/product_model.dart';
+import 'package:fetch_api/src/view/product_app/repo/product_repo.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
 
-import '../../../domain/api_domain.dart';
+class Produccontroller extends GetxController
+    with StateMixin<List<ProductModel>> {
+  @override
+  void onInit() {
+    // TODO: implement onInit
+    super.onInit();
+    change([], status: RxStatus.success());
+    getProoducts();
+  }
 
-class Produccontroller {
-  List<ProductModel> _list = [];
-  RxList<ProductModel> get product => _list.obs;
-
-  //var repo = ProductRepository();
-  Future<List<ProductModel>>? getProoducts() async {
-    // final dio = Dio();
-    final String url = Doamain().productsRoute;
-    log(url);
-    var response = await http.get(Uri.parse(url));
-    // final response = await dio.get(
-    //   url,
-    // );
-    if (response.statusCode == 200) {
-      log(response.body.toString());
-      return productModelFromJson(response.body);
+  var repo = ProductRepository();
+  Future getProoducts() async {
+    if (status.isLoadingMore) return;
+    if (!status.isLoadingMore && value!.isNotEmpty) {
+      change(value, status: RxStatus.loadingMore());
+    } else {
+      change([], status: RxStatus.loading());
     }
-    return [];
+    var response = await repo.getProoducts();
+
+    if (response != null) {
+      if (response['data'].isNotEmpty) {
+        value?.addAll(response['data']);
+        return change(value, status: RxStatus.success());
+      } else {
+        return change([], status: RxStatus.empty());
+      }
+    }
+    return change([], status: RxStatus.empty());
+  }
+}
+
+class ProduccontrollerBiding implements Bindings {
+  @override
+  void dependencies() {
+    // TODO: implement dependencies
+    Get.lazyPut<Produccontroller>(() => Produccontroller());
   }
 }
